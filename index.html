@@ -73,6 +73,7 @@ async function predictFromThunkable(imageBase64) {
 
 // Ascolta messaggi dal WebViewer (Thunkable X)
 window.addEventListener("message", function(event) {
+	alert("ciao");
     if (!event.data) return;
     if (!event.data.startsWith("data:image")) return;
     predictFromThunkable(event.data);

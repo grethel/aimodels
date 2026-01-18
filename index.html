@@ -4,9 +4,11 @@
   <meta charset="UTF-8">
   <title>AI Riconoscimento Rifiuti</title>
 
-  <!-- Librerie -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
+  <!-- TensorFlow.js (VERSIONE COMPATIBILE) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
+
+  <!-- Teachable Machine Image -->
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
 
   <style>
     body {
@@ -15,22 +17,13 @@
       background: #f4f6f8;
       padding: 10px;
     }
-
-    h3 {
-      color: #2c3e50;
-    }
-
-    #status {
-      font-style: italic;
-      color: #666;
-    }
   </style>
 </head>
 
 <body>
 
   <h3>♻️ Analisi del rifiuto</h3>
-  <p id="status">In attesa della foto…</p>
+  <p id="status">Caricamento modello…</p>
 
   <script>
     const URL = "https://teachablemachine.withgoogle.com/models/HpVTR048r/";
@@ -40,13 +33,14 @@
     async function loadModel() {
       const modelURL = URL + "model.json";
       const metadataURL = URL + "metadata.json";
+
       model = await tmImage.load(modelURL, metadataURL);
-      document.getElementById("status").innerText = "Modello caricato ✔️";
+      document.getElementById("status").innerText = "Modello pronto ✔️";
     }
 
     loadModel();
 
-    // Riceve immagine da Thunkable
+    // Riceve la foto da Thunkable
     window.addEventListener("message", function (event) {
       predict(event.data);
     });
@@ -60,7 +54,6 @@
       img.onload = async () => {
         const predictions = await model.predict(img);
 
-        // Ordina per probabilità
         predictions.sort((a, b) => b.probability - a.probability);
 
         const best = predictions[0];
@@ -68,7 +61,7 @@
 
         const result = best.className + " (" + percent + "%)";
 
-        // Invia il risultato a Thunkable
+        // Rimanda il risultato a Thunkable
         window.ReactNativeWebView.postMessage(result);
 
         document.getElementById("status").innerText = result;

@@ -4,10 +4,8 @@
   <meta charset="UTF-8">
   <title>AI Riconoscimento Rifiuti</title>
 
-  <!-- TensorFlow.js (VERSIONE COMPATIBILE) -->
+  <!-- Librerie compatibili con Thunkable -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
-
-  <!-- Teachable Machine Image -->
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
 
   <style>
@@ -28,49 +26,68 @@
   <script>
     const URL = "https://teachablemachine.withgoogle.com/models/HpVTR048r/";
 
-    let model;
+    let model = null;
+    let modelReady = false;
+    let busy = false;
 
     async function loadModel() {
       const modelURL = URL + "model.json";
       const metadataURL = URL + "metadata.json";
 
       model = await tmImage.load(modelURL, metadataURL);
-      document.getElementById("status").innerText = "Modello pronto ✔️";
-    }
-  
-    loadModel();
-window.ReactNativeWebView.postMessage("TEST: connessione OK");
+      modelReady = true;
 
-    // Riceve la foto da Thunkable
+      document.getElementById("status").innerText = "Modello pronto ✔️";
+
+      // test di comunicazione
+      window.ReactNativeWebView.postMessage("MODELLO PRONTO");
+    }
+
+    loadModel();
+
+    // ricezione immagine da Thunkable
     window.addEventListener("message", function (event) {
+      if (!modelReady || busy) return;
+      if (typeof event.data !== "string") return;
+      if (!event.data.startsWith("data:image")) return;
+
       predict(event.data);
     });
 
     async function predict(imageBase64) {
-    document.getElementById("status").innerText = "Analisi in corso…";
-       alert("ciao");
-    const img = new Image();
-    img.src = imageBase64;
+      busy = true;
+      document.getElementById("status").innerText = "Analisi in corso…";
 
-    img.onload = async () => {
-      const predictions = await model.predict(img);
-      predictions.sort((a, b) => b.probability - a.probability);
+      const img = new Image();
+      img.src = imageBase64;
 
-      const best = predictions[0];
-      const percent = (best.probability * 100).toFixed(1);
+      img.onload = async () => {
+        try {
+          const predictions = await model.predict(img);
+          predictions.sort((a, b) => b.probability - a.probability);
 
-      const result = best.className + " (" + percent + "%)";
+          const best = predictions[0];
+          const percent = (best.probability * 100).toFixed(1);
 
-      // 👇 INVIO MESSAGGIO A THUNKABLE (DOPPIO CANALE)
-      if (window.ReactNativeWebView) {
-        window.ReactNativeWebView.postMessage(result);
-      }
+          const result = best.className + " (" + percent + "%)";
 
-      window.postMessage(result, "*");
+          // INVIO A THUNKABLE (STRINGA SEMPLICE)
+          window.ReactNativeWebView.postMessage(result);
 
-      document.getElementById("status").innerText = result;
-    };
-  }
+          document.getElementById("status").innerText = result;
+        } catch (err) {
+          window.ReactNativeWebView.postMessage("Errore analisi");
+          document.getElementById("status").innerText = "Errore";
+        }
+
+        busy = false;
+      };
+
+      img.onerror = () => {
+        window.ReactNativeWebView.postMessage("Errore immagine");
+        busy = false;
+      };
+    }
   </script>
 
 </body>

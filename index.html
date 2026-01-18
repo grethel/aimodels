@@ -58,3 +58,26 @@ async function predictFromThunkable(imageBase64) {
             if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
                 window.ReactNativeWebView.postMessage("Errore analisi");
             }
+            document.getElementById("status").innerText = "Errore";
+        }
+        busy = false;
+    };
+
+    img.onerror = () => {
+        if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+            window.ReactNativeWebView.postMessage("Errore immagine");
+        }
+        busy = false;
+    };
+}
+
+// Ascolta messaggi dal WebViewer (Thunkable X)
+window.addEventListener("message", function(event) {
+    if (!event.data) return;
+    if (!event.data.startsWith("data:image")) return;
+    predictFromThunkable(event.data);
+});
+</script>
+
+</body>
+</html>

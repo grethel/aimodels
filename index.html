@@ -46,27 +46,30 @@
     });
 
     async function predict(imageBase64) {
-      document.getElementById("status").innerText = "Analisi in corso…";
+    document.getElementById("status").innerText = "Analisi in corso…";
 
-      const img = new Image();
-      img.src = imageBase64;
+    const img = new Image();
+    img.src = imageBase64;
 
-      img.onload = async () => {
-        const predictions = await model.predict(img);
+    img.onload = async () => {
+      const predictions = await model.predict(img);
+      predictions.sort((a, b) => b.probability - a.probability);
 
-        predictions.sort((a, b) => b.probability - a.probability);
+      const best = predictions[0];
+      const percent = (best.probability * 100).toFixed(1);
 
-        const best = predictions[0];
-        const percent = (best.probability * 100).toFixed(1);
+      const result = best.className + " (" + percent + "%)";
 
-        const result = best.className + " (" + percent + "%)";
-
-        // Rimanda il risultato a Thunkable
+      // 👇 INVIO MESSAGGIO A THUNKABLE (DOPPIO CANALE)
+      if (window.ReactNativeWebView) {
         window.ReactNativeWebView.postMessage(result);
+      }
 
-        document.getElementById("status").innerText = result;
-      };
-    }
+      window.postMessage(result, "*");
+
+      document.getElementById("status").innerText = result;
+    };
+  }
   </script>
 
 </body>

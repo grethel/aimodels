@@ -47,6 +47,7 @@ window.addEventListener("load", () => {
 
 // Ricezione immagine da Thunkable
 window.addEventListener("message", function(event) {
+	alert("Ciao");
     if (!modelReady || busy) return;
     if (typeof event.data !== "string") return;
     if (!event.data.startsWith("data:image")) return;

@@ -20,7 +20,28 @@ h3 { color:#2c3e50; }
 <p id="status">Caricamento modello…</p>
 
 <script>
-const URL = "https://teachablemachine.withgoogle.com/models/HpVTR048r/"; 
+// Thunkable WebViewer Extension
+var ThunkableWebviewerExtension = {
+  postMessage: function (message) {
+    if (window.ReactNativeWebView) {
+      window.ReactNativeWebView.postMessage(message);
+    } else {
+      window.parent.postMessage(message, '*');
+    }
+  },
+  receiveMessage: function(fxn) {
+    var callbackFunction = function(event) {
+      if (typeof fxn === 'function') {
+        fxn(event.data)
+      }
+    };
+    document.addEventListener('message', callbackFunction, false);
+    window.addEventListener('message', callbackFunction, false);
+  }
+};
+
+// Teachable Machine
+const URL = "https://teachablemachine.withgoogle.com/models/HpVTR048r/";
 let model = null;
 let modelReady = false;
 let busy = false;
@@ -33,7 +54,7 @@ async function loadModel() {
 }
 window.addEventListener("load", loadModel);
 
-// Funzione principale di predizione
+// Funzione principale
 async function predictFromThunkable(imageBase64) {
     if (!modelReady || busy) return;
     busy = true;
@@ -49,34 +70,28 @@ async function predictFromThunkable(imageBase64) {
             const best = predictions[0];
             const percent = (best.probability*100).toFixed(1);
             const result = best.className + " (" + percent + "%)";
-
-            if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
-                window.ReactNativeWebView.postMessage(result);
-            }
+            
+            ThunkableWebviewerExtension.postMessage(result);
             document.getElementById("status").innerText = result;
+
         } catch (err) {
-            if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
-                window.ReactNativeWebView.postMessage("Errore analisi");
-            }
+            ThunkableWebviewerExtension.postMessage("Errore analisi");
             document.getElementById("status").innerText = "Errore";
         }
         busy = false;
     };
 
     img.onerror = () => {
-        if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
-            window.ReactNativeWebView.postMessage("Errore immagine");
-        }
+        ThunkableWebviewerExtension.postMessage("Errore immagine");
         busy = false;
     };
 }
 
-// Ascolta messaggi dal WebViewer (Thunkable X)
-window.addEventListener("message", function(event) {
-	alert("ciao");
-    if (!event.data) return;
-    if (!event.data.startsWith("data:image")) return;
-    predictFromThunkable(event.data);
+// Ricezione foto da Thunkable X
+ThunkableWebviewerExtension.receiveMessage(function(message){
+    if (typeof message === "string" && message.startsWith("data:image")) {
+        predictFromThunkable(message);
+    }
 });
 </script>
 

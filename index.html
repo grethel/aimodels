@@ -2,118 +2,77 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <title>Riconoscimento Rifiuti con AI</title>
+  <title>AI Riconoscimento Rifiuti</title>
 
   <!-- Librerie -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
 
-  <!-- Stile -->
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #f4f6f8;
       text-align: center;
-      padding: 20px;
+      background: #f4f6f8;
+      padding: 10px;
     }
 
-    h1 {
+    h3 {
       color: #2c3e50;
     }
 
-    button {
-      background-color: #27ae60;
-      color: white;
-      border: none;
-      padding: 12px 20px;
-      font-size: 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      margin: 15px 0;
-    }
-
-    button:hover {
-      background-color: #219150;
-    }
-
-    #webcam-container {
-      margin: 20px auto;
-      width: 220px;
-      border: 3px solid #ccc;
-      border-radius: 10px;
-      padding: 5px;
-      background: white;
-    }
-
-    #label-container {
-      margin-top: 20px;
-      font-size: 18px;
-    }
-
-    .prediction {
-      background: white;
-      padding: 8px;
-      margin: 5px auto;
-      width: 250px;
-      border-radius: 6px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    #status {
+      font-style: italic;
+      color: #666;
     }
   </style>
 </head>
 
 <body>
 
-  <h1>♻️ Riconoscimento dei Rifiuti</h1>
-  <p>Usiamo l’Intelligenza Artificiale per capire che tipo di rifiuto è</p>
-
-  <button onclick="init()">▶ Avvia fotocamera</button>
-
-  <div id="webcam-container"></div>
-  <div id="label-container"></div>
+  <h3>♻️ Analisi del rifiuto</h3>
+  <p id="status">In attesa della foto…</p>
 
   <script>
     const URL = "https://teachablemachine.withgoogle.com/models/HpVTR048r/";
 
-    let model, webcam, labelContainer, maxPredictions;
+    let model;
 
-    async function init() {
+    async function loadModel() {
       const modelURL = URL + "model.json";
       const metadataURL = URL + "metadata.json";
-
       model = await tmImage.load(modelURL, metadataURL);
-      maxPredictions = model.getTotalClasses();
-
-      const flip = true;
-      webcam = new tmImage.Webcam(200, 200, flip);
-      await webcam.setup();
-      await webcam.play();
-      window.requestAnimationFrame(loop);
-
-      document.getElementById("webcam-container").appendChild(webcam.canvas);
-
-      labelContainer = document.getElementById("label-container");
-      labelContainer.innerHTML = "";
-      for (let i = 0; i < maxPredictions; i++) {
-        const div = document.createElement("div");
-        div.className = "prediction";
-        labelContainer.appendChild(div);
-      }
+      document.getElementById("status").innerText = "Modello caricato ✔️";
     }
 
-    async function loop() {
-      webcam.update();
-      await predict();
-      window.requestAnimationFrame(loop);
-    }
+    loadModel();
 
-    async function predict() {
-      const prediction = await model.predict(webcam.canvas);
+    // Riceve immagine da Thunkable
+    window.addEventListener("message", function (event) {
+      predict(event.data);
+    });
 
-      for (let i = 0; i < maxPredictions; i++) {
-        const percent = (prediction[i].probability * 100).toFixed(1);
-        labelContainer.childNodes[i].innerHTML =
-          prediction[i].className + ": <strong>" + percent + "%</strong>";
-      }
+    async function predict(imageBase64) {
+      document.getElementById("status").innerText = "Analisi in corso…";
+
+      const img = new Image();
+      img.src = imageBase64;
+
+      img.onload = async () => {
+        const predictions = await model.predict(img);
+
+        // Ordina per probabilità
+        predictions.sort((a, b) => b.probability - a.probability);
+
+        const best = predictions[0];
+        const percent = (best.probability * 100).toFixed(1);
+
+        const result = best.className + " (" + percent + "%)";
+
+        // Invia il risultato a Thunkable
+        window.ReactNativeWebView.postMessage(result);
+
+        document.getElementById("status").innerText = result;
+      };
     }
   </script>
 

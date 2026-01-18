@@ -37,7 +37,7 @@
       model = await tmImage.load(modelURL, metadataURL);
       document.getElementById("status").innerText = "Modello pronto ✔️";
     }
-     alert("ciao");
+  
     loadModel();
 
     // Riceve la foto da Thunkable
@@ -47,7 +47,7 @@
 
     async function predict(imageBase64) {
     document.getElementById("status").innerText = "Analisi in corso…";
-
+       alert("ciao");
     const img = new Image();
     img.src = imageBase64;
 

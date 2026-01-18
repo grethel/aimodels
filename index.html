@@ -1,3 +1,27 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Riconoscimento Rifiuti</title>
+
+  <!-- Librerie compatibili con Thunkable -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f4f6f8;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<h3>♻️ Analisi del rifiuto</h3>
+<p id="status">Caricamento modello…</p>
+
 <script>
 const URL = "https://teachablemachine.withgoogle.com/models/HpVTR048r/";
 
@@ -9,18 +33,17 @@ async function loadModel() {
     const modelURL = URL + "model.json";
     const metadataURL = URL + "metadata.json";
 
+    // Carica modello TM
     model = await tmImage.load(modelURL, metadataURL);
     modelReady = true;
 
     document.getElementById("status").innerText = "Modello pronto ✔️";
-
-    // ✅ invio messaggio solo se ReactNativeWebView esiste
-    if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
-        window.ReactNativeWebView.postMessage("MODELLO PRONTO");
-    }
 }
 
-loadModel();
+// Avvia il caricamento modello DOPO aver caricato la libreria
+window.addEventListener("load", () => {
+    loadModel();
+});
 
 // Ricezione immagine da Thunkable
 window.addEventListener("message", function(event) {
@@ -47,7 +70,7 @@ async function predict(imageBase64) {
             const percent = (best.probability * 100).toFixed(1);
             const result = best.className + " (" + percent + "%)";
 
-            // ✅ invio sicuro del messaggio a Thunkable
+            // Invio sicuro a Thunkable
             if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
                 window.ReactNativeWebView.postMessage(result);
             }
@@ -72,3 +95,6 @@ async function predict(imageBase64) {
     };
 }
 </script>
+
+</body>
+</html>

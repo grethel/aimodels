@@ -65,6 +65,7 @@ function isValidUrl(str) {
 
 window.addEventListener("message", (event)=>{
     const msg = event.data;
+	  sendToThunkable(msg);
     if(msg && typeof msg === "string" && isValidUrl(msg)){
         predict(msg);
     } else {

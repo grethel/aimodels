@@ -60,7 +60,7 @@ async function predict(imageUrl){
 
 // Ricezione URL da Thunkable
 window.addEventListener("message", function(event){
-	alert(event);
+	alert(event.data);
     if(event.data && typeof event.data === "string"){
         predict(event.data);
     }

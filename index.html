@@ -14,61 +14,57 @@
 const BASE_URL = "https://teachablemachine.withgoogle.com/models/Otp8GlSUe/";
 let model;
 
-// Invia messaggio a Thunkable
-function sendToThunkable(msg){
-    window.postMessage(msg, "*");
+function sendToThunkable(message) {
+    window.postMessage(message, "*");
 }
 
-async function init(){
+async function init() {
     try {
         const modelURL = BASE_URL + "model.json";
         const metadataURL = BASE_URL + "metadata.json";
         model = await tmImage.load(modelURL, metadataURL);
-        document.getElementById("status").innerText = "Modello pronto!";
         sendToThunkable("PRONTO");
-    } catch(e){
-        document.getElementById("status").innerText = "Errore: " + e.message;
+    } catch(e) {
         sendToThunkable("ERRORE_LOAD:" + e.message);
     }
 }
 
-async function predict(imageUrl){
-    const img = document.getElementById("image-to-predict");
+async function predict(imageUrl) {
+    const img = document.createElement("img");
+    img.crossOrigin = "anonymous";
     img.src = imageUrl;
-	//alert(imageUrl);
-	 sendToThunkable(imageUrl);
-    img.onload = async function(){
-        document.getElementById("status").innerText = "Analizzando...";
-        try{
+
+    img.onload = async () => {
+        try {
             const predictions = await model.predict(img);
-            predictions.sort((a,b) => b.probability - a.probability);
+            predictions.sort((a,b)=>b.probability-a.probability);
             const top = predictions[0];
-            const msg = JSON.stringify({
+            sendToThunkable(JSON.stringify({
                 className: top.className,
                 probability: Number(top.probability.toFixed(4))
-            });
-            document.getElementById("status").innerText = "Risultato: " + msg;
-            sendToThunkable(msg);
-        }catch(err){
+            }));
+        } catch(err){
             sendToThunkable("ERRORE_PREDICT:" + err.message);
         }
     }
 
-    img.onerror = function(){
+    img.onerror = () => {
         sendToThunkable("ERRORE_CARICAMENTO_IMMAGINE");
     }
 }
 
-// Ricezione URL da Thunkable
-window.addEventListener("message", function(event){
+// Ricezione URL da Thunkable (solo se è un URL valido)
+function isValidUrl(str) {
+    try { new URL(str); return true; }
+    catch(e){ return false; }
+}
+
+window.addEventListener("message", (event)=>{
     const msg = event.data;
-    if(msg && typeof msg === "string"){
-        // Controllo che sia una URL valida http o https
-        if(msg.startsWith("http://") || msg.startsWith("https://")){
-            predict(msg);
-        } else {
-            console.warn("Messaggio ignorato, non è una URL:", msg);
-        }
+    if(msg && typeof msg === "string" && isValidUrl(msg)){
+        predict(msg);
+    } else {
+        console.warn("Messaggio ignorato non URL:", msg);
     }
 });
 

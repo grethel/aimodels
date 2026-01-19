@@ -3,111 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TM Image Classifier Thunkable</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #f4f4f9; }
-        #status { color: #333; font-weight: bold; margin-bottom: 20px; padding: 10px; border-radius: 5px; background: #e0e0e0; }
-        #label-container div { margin: 10px 0; padding: 5px; background: white; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        body { font-family: sans-serif; text-align: center; padding: 20px; }
+        #status { background: #eee; padding: 10px; margin-bottom: 10px; font-size: 14px; }
     </style>
 </head>
 <body>
-    <h3>AI Image Analyzer</h3>
-    <div id="status">Inizializzazione...</div>
+    <div id="status">Inizializzazione sistema...</div>
     <div id="label-container"></div>
-    <img id="image-to-predict" style="display:none; width: 200px;" crossorigin="anonymous">
+    <img id="image-to-predict" style="display:none;" crossorigin="anonymous">
 
     <script type="text/javascript">
-        // 1. Assicurati che l'URL termini con lo slash /
         const BASE_URL = "https://teachablemachine.withgoogle.com/models/Otp8GlSUe/";
-        const modelURL = BASE_URL + "model.json";
-                const metadataURL = BASE_URL + "metadata.json";
         let model, maxPredictions;
 
-        // Funzione per aggiornare lo stato visivo (sostituisce l'alert)
-        function updateStatus(msg) {
-            document.getElementById("status").innerText = msg;
-            console.log(msg);
-            // Invia lo stato anche a Thunkable per debug
+        // Funzione per inviare messaggi a Thunkable
+        function sendToThunkable(message) {
             if (window.ThunkableWebview) {
-                window.ThunkableWebview.postMessage("STATUS: " + msg);
+                window.ThunkableWebview.postMessage(message);
             }
         }
 
         async function init() {
             try {
-                // 2. Definizione corretta delle URL dei file del modello
-                
-
-                updateStatus("Caricamento modello AI...");
-                
+                const modelURL = BASE_URL + "model.json";
+                const metadataURL = BASE_URL + "metadata.json";
                 model = await tmImage.load(modelURL, metadataURL);
                 maxPredictions = model.getTotalClasses();
                 
-                updateStatus("Pronto! Invia l'URL di un'immagine.");
+                document.getElementById("status").innerText = "Modello pronto! Invia immagine.";
+                sendToThunkable("PRONTO");
             } catch (e) {
-                updateStatus("Errore critico: " + e.message);
+                document.getElementById("status").innerText = "Errore: " + e.message;
+                sendToThunkable("ERRORE_LOAD: " + e.message);
             }
         }
 
         async function predict(imageUrl) {
-            if (!model) {
-                updateStatus("Errore: Il modello non è ancora pronto.");
-                return;
-            }
-
-            updateStatus("Caricamento immagine...");
             const imgElement = document.getElementById("image-to-predict");
-            
-            // Gestione cross-origin per evitare blocchi di sicurezza
-            imgElement.crossOrigin = "anonymous";
             imgElement.src = imageUrl;
 
             imgElement.onload = async function() {
-                updateStatus("Analisi immagine...");
+                document.getElementById("status").innerText = "Analizzando...";
                 try {
                     const prediction = await model.predict(imgElement);
-                    let results = [];
-                    const labelContainer = document.getElementById("label-container");
-                    labelContainer.innerHTML = "";
-
-                    for (let i = 0; i < maxPredictions; i++) {
-                        const prob = (prediction[i].probability * 100).toFixed(0);
-                        const className = prediction[i].className;
-                        
-                        const div = document.createElement("div");
-                        div.innerHTML = `<strong>${className}</strong>: ${prob}%`;
-                        labelContainer.appendChild(div);
-
-                        results.push({ class: className, score: prob });
-                    }
-
-                    // Invia il risultato finale a Thunkable
-                    if (window.ThunkableWebview) {
-                        window.ThunkableWebview.postMessage(JSON.stringify(results));
-                    }
-                    updateStatus("Analisi completata con successo.");
+                    let results = "";
+                    
+                    // Creiamo una stringa semplice per il primo test: "NomeClasse:Percentuale"
+                    // Prendiamo solo il risultato con la probabilità più alta
+                    prediction.sort((a, b) => b.probability - a.probability);
+                    
+                    const topResult = prediction[0];
+                    const msg = topResult.className + " (" + (topResult.probability * 100).toFixed(0) + "%)";
+                    
+                    document.getElementById("status").innerText = "Risultato: " + msg;
+                    sendToThunkable(msg); // Invia il risultato a Thunkable
                 } catch (err) {
-                    updateStatus("Errore durante la predizione: " + err.message);
+                    sendToThunkable("ERRORE_PREDICT: " + err.message);
                 }
-            };
-
-            imgElement.onerror = function() {
-                updateStatus("Errore: Impossibile caricare l'immagine. L'URL è corretto?");
             };
         }
 
-        // Ascolta Thunkable
-        window.addEventListener('message', function(event) {
-		    alert("ciao");
-            const data = event.data;
-            if (data && typeof data === 'string' && data !== "undefined") {
-                predict(data);
-            }
-        });
+        // --- IL CUORE DELLA COMUNICAZIONE ---
+        // Thunkable richiede questa funzione specifica
+        if (window.ThunkableWebview) {
+            window.ThunkableWebview.onMessage(function(message) {
+                // message è la stringa (URL) inviata da Thunkable
+                if (message) {
+                    predict(message);
+                }
+            });
+        } else {
+            // Fallback per test da browser normale
+            window.addEventListener('message', function(event) {
+                if (event.data) predict(event.data);
+            });
+        }
 
-        // Avvia il caricamento del modello al caricamento della pagina
         init();
     </script>
 </body>

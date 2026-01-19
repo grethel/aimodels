@@ -60,9 +60,14 @@ async function predict(imageUrl){
 
 // Ricezione URL da Thunkable
 window.addEventListener("message", function(event){
-	 
-    if(event.data && typeof event.data === "string"){
-        predict(event.data);
+    const msg = event.data;
+    if(msg && typeof msg === "string"){
+        // Controllo che sia una URL valida http o https
+        if(msg.startsWith("http://") || msg.startsWith("https://")){
+            predict(msg);
+        } else {
+            console.warn("Messaggio ignorato, non è una URL:", msg);
+        }
     }
 });
 

@@ -2,6 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Riconoscimento Rifiuti</title>
 
 <!-- Librerie -->
@@ -9,11 +10,43 @@
 <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
 
 <style>
-body { font-family: Arial; text-align: center; padding: 20px; background:#f4f6f8; }
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    padding: 20px;
+    background: #f4f6f8;
+    margin: 0;
+}
+
 h3 { color:#2c3e50; }
-#status { margin-top:10px; font-weight:bold; }
-video { border: 2px solid #ccc; border-radius: 8px; margin-top: 10px; }
-button { margin-top: 10px; padding: 10px 20px; font-size: 16px; border-radius: 6px; cursor: pointer; }
+
+#status {
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+video {
+    width: 100%;
+    max-width: 400px;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+button {
+    margin-top: 15px;
+    padding: 15px 30px;
+    font-size: 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    background-color: #2c3e50;
+    color: white;
+    border: none;
+}
+
+button:active {
+    background-color: #1f2a38;
+}
 </style>
 </head>
 <body>
@@ -21,12 +54,11 @@ button { margin-top: 10px; padding: 10px 20px; font-size: 16px; border-radius: 6
 <h3>♻️ Analisi del rifiuto</h3>
 <p id="status">Caricamento modello…</p>
 
-<!-- Webcam -->
-<video id="webcam" width="300" height="300" autoplay playsinline></video><br>
+<video id="webcam" autoplay playsinline></video><br>
 <button id="snapBtn">📸 Scatta Foto</button>
 
 <script>
-// Thunkable WebViewer Extension
+// --- Thunkable WebViewer Extension ---
 var ThunkableWebviewerExtension = {
   postMessage: function (message) {
     if (window.ReactNativeWebView) {
@@ -37,7 +69,7 @@ var ThunkableWebviewerExtension = {
   }
 };
 
-// Teachable Machine
+// --- Teachable Machine ---
 const URL = "https://teachablemachine.withgoogle.com/models/HpVTR048r/";
 let model = null;
 let modelReady = false;
@@ -53,9 +85,10 @@ window.addEventListener("load", loadModel);
 
 // --- Setup webcam ---
 const video = document.getElementById("webcam");
-navigator.mediaDevices.getUserMedia({ video: true })
+navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
   .then(stream => {
       video.srcObject = stream;
+      video.play();
   })
   .catch(err => {
       document.getElementById("status").innerText = "Errore accesso webcam: " + err;
@@ -68,8 +101,8 @@ function capturePhoto() {
     document.getElementById("status").innerText = "Analisi in corso…";
 
     const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = video.videoWidth || 400;
+    canvas.height = video.videoHeight || 300;
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
@@ -89,7 +122,7 @@ async function predictFromThunkable(imageBase64) {
             const best = predictions[0];
             const percent = (best.probability*100).toFixed(1);
             const result = best.className + " (" + percent + "%)";
-            
+
             ThunkableWebviewerExtension.postMessage(result);
             document.getElementById("status").innerText = result;
         } catch (err) {
@@ -107,7 +140,9 @@ async function predictFromThunkable(imageBase64) {
 }
 
 // --- Event listener bottone ---
-document.getElementById("snapBtn").addEventListener("click", capturePhoto);
+const btn = document.getElementById("snapBtn");
+btn.addEventListener("touchend", capturePhoto, {passive:false});
+btn.addEventListener("click", capturePhoto);
 </script>
 
 </body>

@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Riconoscimento Rifiuti</title>
 
-<!-- Librerie -->
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
 
@@ -13,28 +12,27 @@
 body {
     font-family: Arial, sans-serif;
     text-align: center;
+    margin: 0;
     padding: 20px;
     background: #f4f6f8;
-    margin: 0;
 }
 
 h3 { color:#2c3e50; }
 
-#status {
-    margin-top: 10px;
-    font-weight: bold;
-}
+#status { margin-top:10px; font-weight:bold; }
 
 video {
     width: 100%;
     max-width: 400px;
+    height: auto;
     border: 2px solid #ccc;
     border-radius: 8px;
     margin-top: 10px;
 }
 
 button {
-    margin-top: 15px;
+    display: block;
+    margin: 15px auto;
     padding: 15px 30px;
     font-size: 18px;
     border-radius: 8px;
@@ -44,9 +42,7 @@ button {
     border: none;
 }
 
-button:active {
-    background-color: #1f2a38;
-}
+button:active { background-color: #1f2a38; }
 </style>
 </head>
 <body>
@@ -54,18 +50,15 @@ button:active {
 <h3>♻️ Analisi del rifiuto</h3>
 <p id="status">Caricamento modello…</p>
 
-<video id="webcam" autoplay playsinline></video><br>
+<video id="webcam" autoplay playsinline></video>
 <button id="snapBtn">📸 Scatta Foto</button>
 
 <script>
-// --- Thunkable WebViewer Extension ---
+// --- Thunkable WebViewer ---
 var ThunkableWebviewerExtension = {
-  postMessage: function (message) {
-    if (window.ReactNativeWebView) {
-      window.ReactNativeWebView.postMessage(message);
-    } else {
-      window.parent.postMessage(message, '*');
-    }
+  postMessage: function(message) {
+    if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(message);
+    else window.parent.postMessage(message,'*');
   }
 };
 
@@ -75,7 +68,7 @@ let model = null;
 let modelReady = false;
 let busy = false;
 
-// Carica il modello
+// Carica modello
 async function loadModel() {
     model = await tmImage.load(URL + "model.json", URL + "metadata.json");
     modelReady = true;
@@ -83,7 +76,7 @@ async function loadModel() {
 }
 window.addEventListener("load", loadModel);
 
-// --- Setup webcam ---
+// --- Webcam setup ---
 const video = document.getElementById("webcam");
 let videoReady = false;
 
@@ -92,7 +85,7 @@ navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
       video.srcObject = stream;
       video.play();
       video.addEventListener('loadeddata', () => {
-          videoReady = true; // video pronto
+          videoReady = true;
           document.getElementById("status").innerText = "Webcam pronta ✔️";
       });
   })
@@ -100,15 +93,21 @@ navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
       document.getElementById("status").innerText = "Errore accesso webcam: " + err;
   });
 
+// --- Scatta foto ---
 function capturePhoto() {
     if (!videoReady) {
         alert("Attendere che la fotocamera sia pronta!");
         return;
     }
 
+    if (!modelReady || busy) return;
+    busy = true;
+    document.getElementById("status").innerText = "Analisi in corso…";
+
+    // Canvas invisibile per catturare l'immagine
     const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = video.offsetWidth;
+    canvas.height = video.offsetHeight;
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
@@ -116,8 +115,7 @@ function capturePhoto() {
     predictFromThunkable(imageBase64);
 }
 
-
-// --- Funzione principale di predizione ---
+// --- Predizione ---
 async function predictFromThunkable(imageBase64) {
     const img = new Image();
     img.src = imageBase64;
@@ -132,7 +130,7 @@ async function predictFromThunkable(imageBase64) {
 
             ThunkableWebviewerExtension.postMessage(result);
             document.getElementById("status").innerText = result;
-        } catch (err) {
+        } catch(err) {
             ThunkableWebviewerExtension.postMessage("Errore analisi");
             document.getElementById("status").innerText = "Errore: " + err;
         }

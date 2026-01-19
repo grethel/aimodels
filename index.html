@@ -16,7 +16,7 @@
     <div id="status">Caricamento modello...</div>
     <div id="label-container"></div>
     <img id="image-to-predict" style="display:none;" crossorigin="anonymous">
-
+	<div id="debug-log" style="background: #eee; font-size: 10px; color: red;"></div>
     <script type="text/javascript">
         const URL = "https://teachablemachine.withgoogle.com/models/Otp8GlSUe/";
         let model, labelContainer, maxPredictions;
@@ -86,9 +86,29 @@
                 }
             }
         });
+    function logStatus(msg) {
+        // Scrive sulla pagina (visibile nel Web Viewer)
+        document.getElementById("debug-log").innerHTML += "<br>" + msg;
+        // Invia a Thunkable per vederlo in una Label dell'app
+        if (window.ThunkableWebview) {
+            window.ThunkableWebview.postMessage("DEBUG: " + msg);
+        }
+    }
 
+    // Esempio d'uso dentro init()
+    async function init() {
+        logStatus("Inizializzazione modello...");
+        try {
+            model = await tmImage.load(modelURL, metadataURL);
+            logStatus("Modello caricato con successo!");
+        } catch (e) {
+            logStatus("ERRORE: " + e.message);
+        }
+    }
         // Avvio
         init();
-    </script>
+ 
+ 
+</script>
 </body>
 </html>

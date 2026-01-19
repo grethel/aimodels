@@ -21,7 +21,8 @@
     <script type="text/javascript">
         // 1. Assicurati che l'URL termini con lo slash /
         const BASE_URL = "https://teachablemachine.withgoogle.com/models/Otp8GlSUe/";
-        
+        const modelURL = BASE_URL + "model.json";
+                const metadataURL = BASE_URL + "metadata.json";
         let model, maxPredictions;
 
         // Funzione per aggiornare lo stato visivo (sostituisce l'alert)
@@ -37,8 +38,7 @@
         async function init() {
             try {
                 // 2. Definizione corretta delle URL dei file del modello
-                const modelURL = BASE_URL + "model.json";
-                const metadataURL = BASE_URL + "metadata.json";
+                
 
                 updateStatus("Caricamento modello AI...");
                 

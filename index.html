@@ -100,6 +100,7 @@
 
         // Ascolta Thunkable
         window.addEventListener('message', function(event) {
+		    alert("ciao");
             const data = event.data;
             if (data && typeof data === 'string' && data !== "undefined") {
                 predict(data);

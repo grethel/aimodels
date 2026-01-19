@@ -85,30 +85,37 @@ window.addEventListener("load", loadModel);
 
 // --- Setup webcam ---
 const video = document.getElementById("webcam");
+let videoReady = false;
+
 navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
   .then(stream => {
       video.srcObject = stream;
       video.play();
+      video.addEventListener('loadeddata', () => {
+          videoReady = true; // video pronto
+          document.getElementById("status").innerText = "Webcam pronta ✔️";
+      });
   })
   .catch(err => {
       document.getElementById("status").innerText = "Errore accesso webcam: " + err;
   });
 
-// --- Funzione per catturare foto dalla webcam ---
 function capturePhoto() {
-    if (!modelReady || busy) return;
-    busy = true;
-    document.getElementById("status").innerText = "Analisi in corso…";
+    if (!videoReady) {
+        alert("Attendere che la fotocamera sia pronta!");
+        return;
+    }
 
     const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth || 400;
-    canvas.height = video.videoHeight || 300;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     const imageBase64 = canvas.toDataURL("image/png");
     predictFromThunkable(imageBase64);
 }
+
 
 // --- Funzione principale di predizione ---
 async function predictFromThunkable(imageBase64) {

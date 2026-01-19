@@ -35,7 +35,7 @@ async function init(){
 async function predict(imageUrl){
     const img = document.getElementById("image-to-predict");
     img.src = imageUrl;
-
+	alert(imageUrl);
     img.onload = async function(){
         document.getElementById("status").innerText = "Analizzando...";
         try{

@@ -66,6 +66,7 @@
   // Ricezione messaggi da Thunkable (URL immagine)
   window.addEventListener("message", async (event) => {
     const imageUrl = event.data;
+	alert(imageUrl);
     if (imageUrl && imageUrl.startsWith("http")) {
       await predictFromUrl(imageUrl);
     }

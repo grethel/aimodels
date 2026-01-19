@@ -51,6 +51,7 @@ async function loadModel() {
     model = await tmImage.load(URL + "model.json", URL + "metadata.json");
     modelReady = true;
     document.getElementById("status").innerText = "Modello pronto ✔️";
+	alert(model);
 }
 window.addEventListener("load", loadModel);
 
@@ -89,7 +90,7 @@ async function predictFromThunkable(imageBase64) {
 
 // Ricezione foto da Thunkable X
 ThunkableWebviewerExtension.receiveMessage(function(message){
-alert(message);
+ 
     if (typeof message === "string" && message.startsWith("data:image")) {
         predictFromThunkable(message);
     }

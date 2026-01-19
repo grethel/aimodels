@@ -89,8 +89,9 @@ async function predictFromThunkable(imageBase64) {
 
 // Ricezione foto da Thunkable X
 ThunkableWebviewerExtension.receiveMessage(function(message){
-alert(message);
+
     if (typeof message === "string" && message.startsWith("data:image")) {
+	alert(message);
         predictFromThunkable(message);
     }
 });

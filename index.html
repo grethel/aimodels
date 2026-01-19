@@ -3,114 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teachable Machine Thunkable</title>
+    <title>TM Image Classifier Thunkable</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; }
-        #status { color: #666; font-size: 0.9em; }
+        body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #f4f4f9; }
+        #status { color: #333; font-weight: bold; margin-bottom: 20px; padding: 10px; border-radius: 5px; background: #e0e0e0; }
+        #label-container div { margin: 10px 0; padding: 5px; background: white; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
-    <h3>Analisi Immagine AI</h3>
-    <div id="status">Caricamento modello...</div>
+    <h3>AI Image Analyzer</h3>
+    <div id="status">Inizializzazione...</div>
     <div id="label-container"></div>
-    <img id="image-to-predict" style="display:none;" crossorigin="anonymous">
-	<div id="debug-log" style="background: #eee; font-size: 10px; color: red;"></div>
+    <img id="image-to-predict" style="display:none; width: 200px;" crossorigin="anonymous">
+
     <script type="text/javascript">
-	    function logStatus(msg) {
-        // Scrive sulla pagina (visibile nel Web Viewer)
-        document.getElementById("debug-log").innerHTML += "<br>" + msg;
-        // Invia a Thunkable per vederlo in una Label dell'app
-        if (window.ThunkableWebview) {
-            window.ThunkableWebview.postMessage("DEBUG: " + msg);
-        }
-    }
+        // 1. Assicurati che l'URL termini con lo slash /
+        const BASE_URL = "https://teachablemachine.withgoogle.com/models/Otp8GlSUe/";
+        
+        let model, maxPredictions;
 
-	
-        const URL = "https://teachablemachine.withgoogle.com/models/Otp8GlSUe/";
-        let model, labelContainer, maxPredictions;
-
-        // Inizializza il modello all'avvio
-        async function init() {
-            const modelURL = URL + "model.json";
-            const metadataURL = URL + "metadata.json";
-            alert("ciao");
-            try {
-                model = await tmImage.load(modelURL, metadataURL);
-                maxPredictions = model.getTotalClasses();
-                document.getElementById("status").innerText = "Modello Pronto. Invia un'immagine da Thunkable.";
-                
-                // Comunica a Thunkable che il sistema è pronto
-                if (window.ThunkableWebview) {
-                    window.ThunkableWebview.postMessage("MODEL_READY");
-                }
-            } catch (e) {
-                document.getElementById("status").innerText = "Errore caricamento: " + e;
+        // Funzione per aggiornare lo stato visivo (sostituisce l'alert)
+        function updateStatus(msg) {
+            document.getElementById("status").innerText = msg;
+            console.log(msg);
+            // Invia lo stato anche a Thunkable per debug
+            if (window.ThunkableWebview) {
+                window.ThunkableWebview.postMessage("STATUS: " + msg);
             }
         }
 
-        // Funzione per predire l'immagine ricevuta tramite URL
+        async function init() {
+            try {
+                // 2. Definizione corretta delle URL dei file del modello
+                const modelURL = BASE_URL + "model.json";
+                const metadataURL = BASE_URL + "metadata.json";
+
+                updateStatus("Caricamento modello AI...");
+                
+                model = await tmImage.load(modelURL, metadataURL);
+                maxPredictions = model.getTotalClasses();
+                
+                updateStatus("Pronto! Invia l'URL di un'immagine.");
+            } catch (e) {
+                updateStatus("Errore critico: " + e.message);
+            }
+        }
+
         async function predict(imageUrl) {
-            document.getElementById("status").innerText = "Analisi in corso...";
+            if (!model) {
+                updateStatus("Errore: Il modello non è ancora pronto.");
+                return;
+            }
+
+            updateStatus("Caricamento immagine...");
             const imgElement = document.getElementById("image-to-predict");
             
-            // Impostiamo l'URL dell'immagine
+            // Gestione cross-origin per evitare blocchi di sicurezza
+            imgElement.crossOrigin = "anonymous";
             imgElement.src = imageUrl;
 
             imgElement.onload = async function() {
-                const prediction = await model.predict(imgElement);
-                let results = [];
-                
-                // Pulizia contenitore etichette
-                const labelContainer = document.getElementById("label-container");
-                labelContainer.innerHTML = "";
+                updateStatus("Analisi immagine...");
+                try {
+                    const prediction = await model.predict(imgElement);
+                    let results = [];
+                    const labelContainer = document.getElementById("label-container");
+                    labelContainer.innerHTML = "";
 
-                for (let i = 0; i < maxPredictions; i++) {
-                    const prob = (prediction[i].probability * 100).toFixed(0);
-                    const className = prediction[i].className;
-                    
-                    // Mostra a video (opzionale)
-                    const div = document.createElement("div");
-                    div.innerHTML = `${className}: ${prob}%`;
-                    labelContainer.appendChild(div);
+                    for (let i = 0; i < maxPredictions; i++) {
+                        const prob = (prediction[i].probability * 100).toFixed(0);
+                        const className = prediction[i].className;
+                        
+                        const div = document.createElement("div");
+                        div.innerHTML = `<strong>${className}</strong>: ${prob}%`;
+                        labelContainer.appendChild(div);
 
-                    // Prepara dati per Thunkable
-                    results.push({ name: className, confidence: prob });
+                        results.push({ class: className, score: prob });
+                    }
+
+                    // Invia il risultato finale a Thunkable
+                    if (window.ThunkableWebview) {
+                        window.ThunkableWebview.postMessage(JSON.stringify(results));
+                    }
+                    updateStatus("Analisi completata con successo.");
+                } catch (err) {
+                    updateStatus("Errore durante la predizione: " + err.message);
                 }
+            };
 
-                // Invia i risultati a Thunkable come stringa JSON
-                if (window.ThunkableWebview) {
-                    window.ThunkableWebview.postMessage(JSON.stringify(results));
-                }
-                document.getElementById("status").innerText = "Analisi completata.";
+            imgElement.onerror = function() {
+                updateStatus("Errore: Impossibile caricare l'immagine. L'URL è corretto?");
             };
         }
 
-        // Ascolta i messaggi in arrivo da Thunkable
+        // Ascolta Thunkable
         window.addEventListener('message', function(event) {
-            // Assicurati che il messaggio sia una stringa (l'URL)
-            if (event.data && typeof event.data === 'string') {
-                if (event.data !== "undefined") {
-                    predict(event.data);
-                }
+            const data = event.data;
+            if (data && typeof data === 'string' && data !== "undefined") {
+                predict(data);
             }
         });
 
-    // Esempio d'uso dentro init()
-    async function init() {
-        logStatus("Inizializzazione modello...");
-        try {
-            model = await tmImage.load(modelURL, metadataURL);
-            logStatus("Modello caricato con successo!");
-        } catch (e) {
-            logStatus("ERRORE: " + e.message);
-        }
-    }
-        // Avvio
+        // Avvia il caricamento del modello al caricamento della pagina
         init();
- 
- 
-</script>
+    </script>
 </body>
 </html>

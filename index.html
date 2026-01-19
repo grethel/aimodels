@@ -91,8 +91,8 @@ async function predictFromThunkable(imageBase64) {
 ThunkableWebviewerExtension.receiveMessage(function(message){
 	
 	message=message.trim();
-	alert(message.indexOf("data:image"));
-    if (typeof message === "string" && message.startsWith("data:image")) {
+	//alert(message.indexOf("data:image"));
+    if (typeof message === "string" && message.indexOf("data:image")==1) {
 
         predictFromThunkable(message);
     }

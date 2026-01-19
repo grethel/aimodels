@@ -37,6 +37,7 @@ window.addEventListener("load", loadModel);
 // Funzione per inviare messaggi a Thunkable Classic
 function sendMessageToThunkable(message){
     // Classic: invio tramite WebViewerString
+	alert("ciao");
     document.location = "webviewerstring://" + encodeURIComponent(message);
 }
 

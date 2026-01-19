@@ -2,38 +2,79 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Test WebViewer Thunkable</title>
+<title>Teachable Machine Thunkable</title>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 </head>
 <body>
-<h2>Test WebViewer</h2>
-<p id="status">In attesa messaggio...</p>
+<div id="status">Inizializzazione...</div>
+<img id="image-to-predict" style="display:none;" crossorigin="anonymous">
 
 <script>
-// Funzione per inviare messaggi a Thunkable
-function sendToThunkable(msg){
-    if(window.ReactNativeWebView && window.ReactNativeWebView.postMessage){
-        window.ReactNativeWebView.postMessage(msg);
-        console.log("Inviato a Thunkable:", msg);
+const BASE_URL = "https://teachablemachine.withgoogle.com/models/Otp8GlSUe/";
+let model;
+
+function sendToThunkable(message) {
+    if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+        window.ReactNativeWebView.postMessage(message);
     } else {
-        console.warn("ReactNativeWebView non disponibile:", msg);
+        console.warn("ReactNativeWebView non disponibile. Messaggio:", message);
     }
 }
 
-// Funzione per verificare la ricezione del messaggio da Thunkable
-window.addEventListener("message", function(event){
-    const data = event.data;
-    console.log("Messaggio ricevuto:", data);
+async function init() {
+    try {
+        const modelURL = BASE_URL + "model.json";
+        const metadataURL = BASE_URL + "metadata.json";
+        model = await tmImage.load(modelURL, metadataURL);
+        sendToThunkable("PRONTO");
+    } catch(e) {
+        sendToThunkable("ERRORE_LOAD:" + e.message);
+    }
+}
 
-    const status = document.getElementById("status");
-    status.innerText = "Ricevuto dall'app: " + data;
+async function predict(imageUrl) {
+    const img = document.createElement("img");
+    img.crossOrigin = "anonymous";
+    img.src = imageUrl;
 
-    // Verifica se è una URL
-    if(data && typeof data === "string" && (data.startsWith("http://") || data.startsWith("https://"))){
-        sendToThunkable(JSON.stringify({testURL: data, ok: true}));
+    img.onload = async () => {
+        try {
+            const predictions = await model.predict(img);
+            predictions.sort((a,b)=>b.probability-a.probability);
+            const top = predictions[0];
+            sendToThunkable(JSON.stringify({
+                className: top.className,
+                probability: Number(top.probability.toFixed(4))
+            }));
+        } catch(err){
+            sendToThunkable("ERRORE_PREDICT:" + err.message);
+        }
+    }
+
+    img.onerror = () => {
+        sendToThunkable("ERRORE_CARICAMENTO_IMMAGINE");
+    }
+}
+
+// Ricezione URL da Thunkable (solo se è un URL valido)
+function isValidUrl(str) {
+    try { new URL(str); return true; }
+    catch(e){ return false; }
+}
+
+window.addEventListener("message", (event)=>{
+    const msg = event.data;
+	document.getElementById("status").innerHTML=msg;
+	  sendToThunkable(msg);
+    if(msg && typeof msg === "string" && isValidUrl(msg)){
+        predict(msg);
     } else {
-        sendToThunkable(JSON.stringify({testURL: null, ok: false}));
+        console.warn("Messaggio ignorato non URL:", msg);
     }
 });
+
+init();
 </script>
 </body>
 </html>

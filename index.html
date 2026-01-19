@@ -1,71 +1,52 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Teachable Machine API WebViewer</title>
-</head>
-<body>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
- 
-  <script>
-  // Link al tuo modello Teachable Machine
-  const MODEL_URL = "https://teachablemachine.withgoogle.com/models/Otp8GlSUe/";
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
-  let model;
+<script>
+const MODEL_URL = "https://teachablemachine.withgoogle.com/models/Otp8GlSUe/";
+let model;
 
-  // Carica il modello
-  async function loadModel() {
-    if (!model) {
-      const modelURL = MODEL_URL + "model.json";
-      const metadataURL = MODEL_URL + "metadata.json";
-      model = await tmImage.load(modelURL, metadataURL);
-    }
+async function loadModel() {
+  if (!model) {
+    const modelURL = MODEL_URL + "model.json";
+    const metadataURL = MODEL_URL + "metadata.json";
+    model = await tmImage.load(modelURL, metadataURL);
   }
+}
 
-  // Funzione principale: predice da URL immagine
-  async function predictFromUrl(imageUrl) {
-    await loadModel();
+async function predictFromUrl(imageUrl) {
+  await loadModel();
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = imageUrl;
 
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous"; // importante per WebViewer / Thunkable
-      img.src = imageUrl;
+    img.onload = async () => {
+      const predictions = await model.predict(img);
 
-      img.onload = async () => {
-        const predictions = await model.predict(img);
+      const result = predictions.map(p => ({
+        className: p.className,
+        probability: Number(p.probability.toFixed(4))
+      }));
 
-        // JSON pulito
-        const result = predictions.map(p => ({
-          className: p.className,
-          probability: Number(p.probability.toFixed(4))
-        }));
+      // Invia il messaggio a Thunkable
+      window.postMessage(JSON.stringify(result), "*");
 
-        // invia il JSON a Thunkable
-        if (window.ThunkableWebviewerExtension) {
-          ThunkableWebviewerExtension.postMessage(JSON.stringify(result));
-        }
+      resolve(result);
+    };
 
-        resolve(result);
-      };
-
-      img.onerror = () => {
-        const errorMsg = { error: "Errore caricamento immagine" };
-        if (window.ThunkableWebviewerExtension) {
-          ThunkableWebviewerExtension.postMessage(JSON.stringify(errorMsg));
-        }
-        reject(errorMsg);
-      };
-    });
-  }
-
-  // Ascolta i messaggi da Thunkable (URL immagine)
-  window.addEventListener("message", async (event) => {
-    const imageUrl = event.data;
-    if (imageUrl) {
-      await predictFromUrl(imageUrl);
-    }
+    img.onerror = () => {
+      const errorMsg = { error: "Errore caricamento immagine" };
+      window.postMessage(JSON.stringify(errorMsg), "*");
+      reject(errorMsg);
+    };
   });
-  </script>
-</body>
-</html>
+}
+
+// Riceve messaggi da Thunkable
+window.addEventListener("message", async (event) => {
+  const imageUrl = event.data;
+  if (imageUrl && imageUrl.startsWith("http")) {
+    await predictFromUrl(imageUrl);
+  }
+});
+</script>

@@ -12,12 +12,18 @@
 body { font-family: Arial; text-align: center; padding: 20px; background:#f4f6f8; }
 h3 { color:#2c3e50; }
 #status { margin-top:10px; font-weight:bold; }
+video { border: 2px solid #ccc; border-radius: 8px; margin-top: 10px; }
+button { margin-top: 10px; padding: 10px 20px; font-size: 16px; border-radius: 6px; cursor: pointer; }
 </style>
 </head>
 <body>
 
 <h3>♻️ Analisi del rifiuto</h3>
 <p id="status">Caricamento modello…</p>
+
+<!-- Webcam -->
+<video id="webcam" width="300" height="300" autoplay playsinline></video><br>
+<button id="snapBtn">📸 Scatta Foto</button>
 
 <script>
 // Thunkable WebViewer Extension
@@ -28,15 +34,6 @@ var ThunkableWebviewerExtension = {
     } else {
       window.parent.postMessage(message, '*');
     }
-  },
-  receiveMessage: function(fxn) {
-    var callbackFunction = function(event) {
-      if (typeof fxn === 'function') {
-        fxn(event.data)
-      }
-    };
-    document.addEventListener('message', callbackFunction, false);
-    window.addEventListener('message', callbackFunction, false);
   }
 };
 
@@ -54,12 +51,34 @@ async function loadModel() {
 }
 window.addEventListener("load", loadModel);
 
-// Funzione principale
-async function predictFromThunkable(imageBase64) {
+// --- Setup webcam ---
+const video = document.getElementById("webcam");
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then(stream => {
+      video.srcObject = stream;
+  })
+  .catch(err => {
+      document.getElementById("status").innerText = "Errore accesso webcam: " + err;
+  });
+
+// --- Funzione per catturare foto dalla webcam ---
+function capturePhoto() {
     if (!modelReady || busy) return;
     busy = true;
     document.getElementById("status").innerText = "Analisi in corso…";
 
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const imageBase64 = canvas.toDataURL("image/png");
+    predictFromThunkable(imageBase64);
+}
+
+// --- Funzione principale di predizione ---
+async function predictFromThunkable(imageBase64) {
     const img = new Image();
     img.src = imageBase64;
 
@@ -73,30 +92,22 @@ async function predictFromThunkable(imageBase64) {
             
             ThunkableWebviewerExtension.postMessage(result);
             document.getElementById("status").innerText = result;
-
         } catch (err) {
             ThunkableWebviewerExtension.postMessage("Errore analisi");
-            document.getElementById("status").innerText = "Errore";
+            document.getElementById("status").innerText = "Errore: " + err;
         }
         busy = false;
     };
 
     img.onerror = () => {
         ThunkableWebviewerExtension.postMessage("Errore immagine");
+        document.getElementById("status").innerText = "Errore caricamento immagine";
         busy = false;
     };
 }
 
-// Ricezione foto da Thunkable X
-ThunkableWebviewerExtension.receiveMessage(function(message){
-	
-	message=message.trim();
-	//alert(message.indexOf("data:image"));
-    if (typeof message === "string" && message.indexOf("data:image")==1) {
-
-        predictFromThunkable(message);
-    }
-});
+// --- Event listener bottone ---
+document.getElementById("snapBtn").addEventListener("click", capturePhoto);
 </script>
 
 </body>

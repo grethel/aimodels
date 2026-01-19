@@ -13,7 +13,7 @@
 <script>
 const BASE_URL = "https://teachablemachine.withgoogle.com/models/Otp8GlSUe/";
 let model;
-alert("miao");
+ 
 // Invia messaggio a Thunkable
 function sendToThunkable(msg){
     window.postMessage(msg, "*");
@@ -60,6 +60,7 @@ async function predict(imageUrl){
 
 // Ricezione URL da Thunkable
 window.addEventListener("message", function(event){
+	alert(event.data);
     if(event.data && typeof event.data === "string"){
         predict(event.data);
     }

@@ -15,6 +15,7 @@
   // Carica il modello TM
   async function loadModel() {
     if (!model) {
+		alert("ciao");
       const modelURL = MODEL_URL + "model.json";
       const metadataURL = MODEL_URL + "metadata.json";
       model = await tmImage.load(modelURL, metadataURL);

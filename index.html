@@ -60,9 +60,29 @@ async function predict(imageUrl) {
       
       // Optionally display the received message on the webpage
       document.getElementById('messageDisplay').innerText = response;
-      predict(message);
+      
       // Send the response back to the Thunkable app
-      callback(response);
+	  
+		const img = document.createElement("img");
+		img.crossOrigin = "anonymous";
+		img.src = message;
+
+		img.onload = async () => {
+			try {
+				const predictions = await model.predict(img);
+				predictions.sort((a,b)=>b.probability-a.probability);
+				const top = predictions[0];
+				response= JSON.stringify({className: top.className,probability: Number(top.probability.toFixed(4))});
+			} catch(err){
+				response= "ERRORE_PREDICT:" + err.message;
+			}
+		}
+
+		img.onerror = () => {
+			response="ERRORE_CARICAMENTO_IMMAGINE";
+		}
+  
+		callback(response);
     });
 
     // Optional: Handle incoming messages that do not expect a return value
@@ -70,7 +90,7 @@ async function predict(imageUrl) {
       // Display the received message with "demo: " prefix
       const response = 'demo: ' + message;
       document.getElementById('messageDisplay').innerText = response;
-	   predict(message);
+	   
     });
 	
 	

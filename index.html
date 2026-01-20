@@ -30,6 +30,7 @@ async function init() {
    // ThunkableWebviewerExtension.postMessage("PRONTO");
   } catch (e) {
 //    ThunkableWebviewerExtension.postMessage("ERRORE_LOAD:" + e.message);
+document.getElementById("status").innerText = "ERRORE_LOAD:" + e.message;
   }
 }
 init();
@@ -43,15 +44,15 @@ ThunkableWebviewerExtension.receiveMessageWithReturnValue(
 
     document.getElementById("messageDisplay").innerText =
       "Ricevuto: " + message;
-
+	alert(message);
     if (!model) {
       callback("ERRORE: modello non pronto");
       return;
     }
 
     if (typeof message !== "string" || !message.startsWith("http")) {
-      callback("ERRORE: input non valido");
-      return;
+    //  callback("ERRORE: input non valido");
+   //   return;
     }
 
     const img = new Image();
@@ -64,19 +65,19 @@ ThunkableWebviewerExtension.receiveMessageWithReturnValue(
         predictions.sort((a, b) => b.probability - a.probability);
 
         const top = predictions[0];
-
+		/*
         callback(JSON.stringify({
           className: top.className,
           probability: Number(top.probability.toFixed(4))
         }));
-
+		*/
       } catch (err) {
-        callback("ERRORE_PREDICT:" + err.message);
+       // callback("ERRORE_PREDICT:" + err.message);
       }
     };
 
     img.onerror = () => {
-      callback("ERRORE_CARICAMENTO_IMMAGINE");
+      //callback("ERRORE_CARICAMENTO_IMMAGINE");
     };
 });
 </script>

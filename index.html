@@ -26,7 +26,7 @@ async function init() {
       BASE_URL + "model.json",
       BASE_URL + "metadata.json"
     );
-    document.getElementById("status").innerText = "Modello pronto 9";
+    document.getElementById("status").innerText = "Modello pronto 10";
    // ThunkableWebviewerExtension.postMessage("PRONTO");
   } catch (e) {
 //    ThunkableWebviewerExtension.postMessage("ERRORE_LOAD:" + e.message);
@@ -43,7 +43,24 @@ ThunkableWebviewerExtension.receiveMessage(function(message) {
 	const img = document.getElementById("preview");
 	 const imageUrl = message.replace(/^"(.*)"$/, '$1');
 	img.src = imageUrl;
-	alert(isValidUrl(img.src));
+	if(isValidUrl(img.src)) {
+	
+		const img = document.createElement("img");
+		img.crossOrigin = "anonymous";
+		img.src = imageUrl;
+
+		img.onload = async () => {
+			try {
+				const predictions = await model.predict(img);
+				predictions.sort((a,b)=>b.probability-a.probability);
+				const top = predictions[0];
+				alert(top);
+				 
+			} catch(err){
+				alert("ERRORE_PREDICT:" + err.message);
+			}
+		}
+	}
 	 
 	
 	

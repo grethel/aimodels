@@ -26,7 +26,7 @@ async function init() {
       BASE_URL + "model.json",
       BASE_URL + "metadata.json"
     );
-    document.getElementById("status").innerText = "Modello pronto 7";
+    document.getElementById("status").innerText = "Modello pronto 8";
    // ThunkableWebviewerExtension.postMessage("PRONTO");
   } catch (e) {
 //    ThunkableWebviewerExtension.postMessage("ERRORE_LOAD:" + e.message);
@@ -43,6 +43,7 @@ ThunkableWebviewerExtension.receiveMessage(function(message) {
 	const img = document.getElementById("preview");
 	 const imageUrl = message.replace(/^"(.*)"$/, '$1');
 	img.src = imageUrl;
+	alert(img.src);
 	 
 	
 	

@@ -26,7 +26,7 @@ async function init() {
       BASE_URL + "model.json",
       BASE_URL + "metadata.json"
     );
-    document.getElementById("status").innerText = "Modello pronto 30";
+    document.getElementById("status").innerText = "Modello pronto 31";
    // ThunkableWebviewerExtension.postMessage("PRONTO");
   } catch (e) {
 //    ThunkableWebviewerExtension.postMessage("ERRORE_LOAD:" + e.message);
@@ -62,7 +62,7 @@ ThunkableWebviewerExtension.receiveMessage(function(message) {
 			 
 			  
 			  // callback(top);
-			  document.getElementById("messageDisplay").innerText = prediction;
+			  document.getElementById("messageDisplay").innerText = prediction.join();
 
 			} catch(e) {
 			   //callback("ERRORE_PREDICT:" + e.message);

@@ -26,7 +26,7 @@ async function init() {
       BASE_URL + "model.json",
       BASE_URL + "metadata.json"
     );
-    document.getElementById("status").innerText = "Modello pronto 17";
+    document.getElementById("status").innerText = "Modello pronto 18";
    // ThunkableWebviewerExtension.postMessage("PRONTO");
   } catch (e) {
 //    ThunkableWebviewerExtension.postMessage("ERRORE_LOAD:" + e.message);
@@ -81,7 +81,7 @@ async function runPrediction(img) {
         });
 
         // Callback a Thunkable (funziona)
-        sendToThunkable(resultJSON);
+         ThunkableWebviewerExtension.postMessage(resultJSON);
 
         // ✅ Se vuoi postMessage separato, fai così:
         setTimeout(() => {
@@ -89,7 +89,7 @@ async function runPrediction(img) {
         }, 0);
 
     } catch(err) {
-        sendToThunkable("ERRORE_PREDICT:" + err.message);
+         ThunkableWebviewerExtension.postMessage("ERRORE_PREDICT:" + err.message);
     }
 }
 

@@ -46,7 +46,7 @@ init();
     ThunkableWebviewerExtension.receiveMessageWithReturnValue(function(message, callback) {
       // Create the response by prefixing the received message with "demo: "
       const response = 'demo: ' + message;
-      sendToThunkable("io:"+message);
+      
       // Optionally display the received message on the webpage
       document.getElementById('messageDisplay').innerText = response;
        

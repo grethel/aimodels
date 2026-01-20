@@ -55,7 +55,7 @@ ThunkableWebviewerExtension.receiveMessageWithReturnValue(
     }
 
     if (typeof message !== "string" || !message.startsWith("http")) {
-      callback("ERRORE: input non valido");
+      callback("ERRORE: input non valido:"+message);
       return;
     }
 

@@ -26,7 +26,7 @@ async function init() {
       BASE_URL + "model.json",
       BASE_URL + "metadata.json"
     );
-    document.getElementById("status").innerText = "Modello pronto 15";
+    document.getElementById("status").innerText = "Modello pronto 16";
    // ThunkableWebviewerExtension.postMessage("PRONTO");
   } catch (e) {
 //    ThunkableWebviewerExtension.postMessage("ERRORE_LOAD:" + e.message);
@@ -63,16 +63,13 @@ ThunkableWebviewerExtension.receiveMessage(function(message) {
     catch(e){ return false; }
 }
 
-async function runPrediction(img) {
+  function runPrediction(img) {
     try {
         const predictions = await model.predict(img);
         predictions.sort((a,b)=>b.probability-a.probability);
         const top = predictions[0];
 
-        ThunkableWebviewerExtension.postMessage(JSON.stringify({
-            className: top.className,
-            probability: Number(top.probability.toFixed(4))
-        }));
+        ThunkableWebviewerExtension.postMessage(JSON.stringify({className: top.className,probability: Number(top.probability.toFixed(4))}));
     } catch(err) {
 		ThunkableWebviewerExtension.postMessage("ERRORE_PREDICT:" + err.message);
  

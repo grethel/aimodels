@@ -12,7 +12,7 @@
 <body>
 <div id="status">Inizializzazione...</div>
 <span id="messageDisplay"></span>
-
+<img id="preview" crossorigin="anonymous" style="max-width:90%; border:2px solid #ccc;">
 <script>
 const BASE_URL = "https://teachablemachine.withgoogle.com/models/Otp8GlSUe/";
 let model = null;
@@ -39,6 +39,12 @@ ThunkableWebviewerExtension.receiveMessage(function(message) {
   // Do something with your message
  
     document.getElementById("messageDisplay").innerText =message;
+	 
+	const img = document.getElementById("preview");
+	img.crossOrigin = "anonymous";
+	img.src = message;
+	
+	
 });
  
 </script>

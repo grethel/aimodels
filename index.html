@@ -63,18 +63,30 @@ ThunkableWebviewerExtension.receiveMessage(function(message) {
     catch(e){ return false; }
 }
 
-  function runPrediction(img) {
+async function runPrediction(img) {
     try {
         const predictions = await model.predict(img);
         predictions.sort((a,b)=>b.probability-a.probability);
         const top = predictions[0];
 
-        ThunkableWebviewerExtension.postMessage(JSON.stringify({className: top.className,probability: Number(top.probability.toFixed(4))}));
+        const resultJSON = JSON.stringify({
+            className: top.className,
+            probability: Number(top.probability.toFixed(4))
+        });
+
+        // Callback a Thunkable (funziona)
+        callback(resultJSON);
+
+        // ✅ Se vuoi postMessage separato, fai così:
+        setTimeout(() => {
+            ThunkableWebviewerExtension.postMessage(resultJSON);
+        }, 0);
+
     } catch(err) {
-		ThunkableWebviewerExtension.postMessage("ERRORE_PREDICT:" + err.message);
- 
+        callback("ERRORE_PREDICT:" + err.message);
     }
 }
+
 
 </script>
 </body>

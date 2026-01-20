@@ -26,7 +26,7 @@ async function init() {
       BASE_URL + "model.json",
       BASE_URL + "metadata.json"
     );
-    document.getElementById("status").innerText = "Modello pronto 20";
+    document.getElementById("status").innerText = "Modello pronto 21";
    // ThunkableWebviewerExtension.postMessage("PRONTO");
   } catch (e) {
 //    ThunkableWebviewerExtension.postMessage("ERRORE_LOAD:" + e.message);
@@ -52,7 +52,19 @@ ThunkableWebviewerExtension.receiveMessage(function(message) {
 		img.crossOrigin = "anonymous";
 		img.src = imageUrl;
 
-		runPrediction(img);
+		function doPredict() {
+			try {
+			  const predictions = model.predict(img); // predizione sincrona su img già caricata
+			  predictions.sort((a,b)=>b.probability-a.probability);
+			  const top = predictions[0];
+			  callback(JSON.stringify({className: top.className, probability: Number(top.probability.toFixed(4))}));
+			} catch(e) {
+			  callback("ERRORE_PREDICT:" + e.message);
+			}
+		  }
+
+		  // Forzo la predizione dopo 200ms per sicurezza caricamento immagine
+		  setTimeout(doPredict, 200);
 	}
 	 
 	
@@ -69,23 +81,35 @@ function sendToThunkable(message) {
         console.warn("ReactNativeWebView non disponibile. Messaggio:", message);
     }
 }
-async function runPrediction(imgElement) {
-            try {
-                const predictions = await model.predict(imgElement);
-                predictions.sort((a, b) => b.probability - a.probability);
-                
-                const result = {
-                    className: predictions[0].className,
-                    probability: Number(predictions[0].probability.toFixed(4))
-                };
 
-                // Invia il JSON a Thunkable
-                ThunkableWebviewerExtension.postMessage(JSON.stringify(result));
-                document.getElementById("status").innerText = "Analisi inviata: " + result.className;
-            } catch (err) {
-                ThunkableWebviewerExtension.postMessage("ERRORE_PREDICT: " + err.message);
-            }
-        }
+ThunkableWebviewerExtension.receiveMessageWithReturnValue(function(message, callback) {
+
+  // rimuovo virgolette
+  const imageUrl = message.replace(/^"(.*)"$/, '$1');
+
+  // prendo immagine dal DOM
+  const img = document.getElementById("preview");
+  img.src = imageUrl;
+
+  // funzione predizione separata
+  function doPredict() {
+    try {
+      const predictions = model.predict(img); // predizione sincrona su img già caricata
+      predictions.sort((a,b)=>b.probability-a.probability);
+      const top = predictions[0];
+      callback(JSON.stringify({className: top.className, probability: Number(top.probability.toFixed(4))}));
+    } catch(e) {
+      callback("ERRORE_PREDICT:" + e.message);
+    }
+  }
+
+  // Forzo la predizione dopo 200ms per sicurezza caricamento immagine
+  setTimeout(doPredict, 200);
+
+});
+
+
+ 
 
 
 </script>

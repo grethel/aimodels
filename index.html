@@ -27,9 +27,9 @@ async function init() {
       BASE_URL + "metadata.json"
     );
     document.getElementById("status").innerText = "Modello pronto";
-    ThunkableWebviewerExtension.postMessage("PRONTO");
+   // ThunkableWebviewerExtension.postMessage("PRONTO");
   } catch (e) {
-    ThunkableWebviewerExtension.postMessage("ERRORE_LOAD:" + e.message);
+//    ThunkableWebviewerExtension.postMessage("ERRORE_LOAD:" + e.message);
   }
 }
 init();

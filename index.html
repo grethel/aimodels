@@ -26,7 +26,7 @@ async function init() {
       BASE_URL + "model.json",
       BASE_URL + "metadata.json"
     );
-    document.getElementById("status").innerText = "Modello pronto 18";
+    document.getElementById("status").innerText = "Modello pronto 19";
    // ThunkableWebviewerExtension.postMessage("PRONTO");
   } catch (e) {
 //    ThunkableWebviewerExtension.postMessage("ERRORE_LOAD:" + e.message);
@@ -69,27 +69,34 @@ function sendToThunkable(message) {
         console.warn("ReactNativeWebView non disponibile. Messaggio:", message);
     }
 }
-async function runPrediction(img) {
+async function runPrediction(imgElement) {
     try {
-        const predictions = await model.predict(img);
-        predictions.sort((a,b)=>b.probability-a.probability);
+        // 1. Controllo se il modello esiste
+        if (!model) {
+            ThunkableWebviewerExtension.postMessage("ERRORE: Modello non caricato");
+            return;
+        }
+
+        // 2. Esegui la predizione
+        const predictions = await model.predict(imgElement);
+        
+        // 3. Ordina i risultati (dal più probabile al meno)
+        predictions.sort((a, b) => b.probability - a.probability);
         const top = predictions[0];
 
+        // 4. Prepara l'oggetto JSON
         const resultJSON = JSON.stringify({
             className: top.className,
             probability: Number(top.probability.toFixed(4))
         });
 
-        // Callback a Thunkable (funziona)
-         ThunkableWebviewerExtension.postMessage(resultJSON);
+        // 5. Invia un SINGOLO messaggio a Thunkable
+        // Non serve il setTimeout se la libreria è caricata correttamente
+        ThunkableWebviewerExtension.postMessage(resultJSON);
 
-        // ✅ Se vuoi postMessage separato, fai così:
-        setTimeout(() => {
-            ThunkableWebviewerExtension.postMessage(resultJSON);
-        }, 0);
-
-    } catch(err) {
-         ThunkableWebviewerExtension.postMessage("ERRORE_PREDICT:" + err.message);
+    } catch (err) {
+        // Invia l'errore specifico a Thunkable per il debug
+        ThunkableWebviewerExtension.postMessage("ERRORE_PREDICT: " + err.message);
     }
 }
 

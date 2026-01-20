@@ -26,7 +26,7 @@ async function init() {
       BASE_URL + "model.json",
       BASE_URL + "metadata.json"
     );
-    document.getElementById("status").innerText = "Modello pronto 1";
+    document.getElementById("status").innerText = "Modello pronto 2";
    // ThunkableWebviewerExtension.postMessage("PRONTO");
   } catch (e) {
 //    ThunkableWebviewerExtension.postMessage("ERRORE_LOAD:" + e.message);
@@ -34,52 +34,12 @@ document.getElementById("status").innerText = "ERRORE_LOAD:" + e.message;
   }
 }
 init();
-
-/* ===============================
-   RICEZIONE DA THUNKABLE
-   (USA L’ESTENSIONE, NON window)
-================================ */
-ThunkableWebviewerExtension.receiveMessageWithReturnValue(
-  function(message, callback) {
-
-    document.getElementById("messageDisplay").innerText =
-      "Ricevuto: " + message;
-	alert(message);
-    if (!model) {
-      callback("ERRORE: modello non pronto");
-      return;
-    }
-
-    if (typeof message !== "string" || !message.startsWith("http")) {
-    //  callback("ERRORE: input non valido");
-   //   return;
-    }
-
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = message;
-
-    img.onload = async () => {
-      try {
-        const predictions = await model.predict(img);
-        predictions.sort((a, b) => b.probability - a.probability);
-
-        const top = predictions[0];
-		/*
-        callback(JSON.stringify({
-          className: top.className,
-          probability: Number(top.probability.toFixed(4))
-        }));
-		*/
-      } catch (err) {
-       // callback("ERRORE_PREDICT:" + err.message);
-      }
-    };
-
-    img.onerror = () => {
-      //callback("ERRORE_CARICAMENTO_IMMAGINE");
-    };
+// when we get a message from the app, display it on the page
+ThunkableWebviewerExtension.receiveMessage(function(message) {
+  // Do something with your message
+  alert(message)
 });
+ 
 </script>
 </body>
 </html>

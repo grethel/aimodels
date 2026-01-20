@@ -26,7 +26,7 @@ async function init() {
       BASE_URL + "model.json",
       BASE_URL + "metadata.json"
     );
-    document.getElementById("status").innerText = "Modello pronto 2";
+    document.getElementById("status").innerText = "Modello pronto 3";
    // ThunkableWebviewerExtension.postMessage("PRONTO");
   } catch (e) {
 //    ThunkableWebviewerExtension.postMessage("ERRORE_LOAD:" + e.message);
@@ -37,7 +37,8 @@ init();
 // when we get a message from the app, display it on the page
 ThunkableWebviewerExtension.receiveMessage(function(message) {
   // Do something with your message
-  alert(message)
+ 
+    document.getElementById("messageDisplay").innerText =message;
 });
  
 </script>

@@ -33,9 +33,9 @@ async function init() {
     const metadataURL = BASE_URL + "metadata.json";
     model = await tmImage.load(modelURL, metadataURL);
     document.getElementById("status").innerText = "Modello pronto";
-    sendToThunkable("PRONTO");
+   // sendToThunkable("PRONTO");
   } catch (e) {
-    sendToThunkable("ERRORE_LOAD:" + e.message);
+    //sendToThunkable("ERRORE_LOAD:" + e.message);
   }
 }
 init();

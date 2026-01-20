@@ -85,13 +85,7 @@ async function predict(imageUrl) {
 		callback(response);
     });
 
-    // Optional: Handle incoming messages that do not expect a return value
-    ThunkableWebviewerExtension.receiveMessage(function(message) {
-      // Display the received message with "demo: " prefix
-      const response = 'demo: ' + message;
-      document.getElementById('messageDisplay').innerText = response;
-	   
-    });
+ 
 	
 	
 // Ricezione URL da Thunkable (solo se è un URL valido)

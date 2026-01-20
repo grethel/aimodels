@@ -18,42 +18,67 @@ const BASE_URL = "https://teachablemachine.withgoogle.com/models/Otp8GlSUe/";
 let model = null;
 
 /* ===============================
-   INVIO MESSAGGI A THUNKABLE
-================================ */
-function sendToThunkable(message) {
-  ThunkableWebviewerExtension.postMessage(message);
-}
-
-/* ===============================
    INIT MODELLO
 ================================ */
 async function init() {
   try {
-    const modelURL = BASE_URL + "model.json";
-    const metadataURL = BASE_URL + "metadata.json";
-    model = await tmImage.load(modelURL, metadataURL);
+    model = await tmImage.load(
+      BASE_URL + "model.json",
+      BASE_URL + "metadata.json"
+    );
     document.getElementById("status").innerText = "Modello pronto";
-  sendToThunkable("PRONTO");
+    ThunkableWebviewerExtension.postMessage("PRONTO");
   } catch (e) {
-    //sendToThunkable("ERRORE_LOAD:" + e.message);
+    ThunkableWebviewerExtension.postMessage("ERRORE_LOAD:" + e.message);
   }
 }
 init();
 
 /* ===============================
-   RICEZIONE URL + PREDIZIONE
+   RICEZIONE DA THUNKABLE
+   (USA L’ESTENSIONE, NON window)
 ================================ */
-    ThunkableWebviewerExtension.receiveMessageWithReturnValue(function(message, callback) {
-      // Create the response by prefixing the received message with "demo: "
-      const response = 'demo: ' + message;
-      
-      // Optionally display the received message on the webpage
-      document.getElementById('messageDisplay').innerText = response;
-       
-      // Send the response back to the Thunkable app
-	  
-      callback(response);
-    });
+ThunkableWebviewerExtension.receiveMessageWithReturnValue(
+  function(message, callback) {
+
+    document.getElementById("messageDisplay").innerText =
+      "Ricevuto: " + message;
+
+    if (!model) {
+      callback("ERRORE: modello non pronto");
+      return;
+    }
+
+    if (typeof message !== "string" || !message.startsWith("http")) {
+      callback("ERRORE: input non valido");
+      return;
+    }
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = message;
+
+    img.onload = async () => {
+      try {
+        const predictions = await model.predict(img);
+        predictions.sort((a, b) => b.probability - a.probability);
+
+        const top = predictions[0];
+
+        callback(JSON.stringify({
+          className: top.className,
+          probability: Number(top.probability.toFixed(4))
+        }));
+
+      } catch (err) {
+        callback("ERRORE_PREDICT:" + err.message);
+      }
+    };
+
+    img.onerror = () => {
+      callback("ERRORE_CARICAMENTO_IMMAGINE");
+    };
+});
 </script>
 </body>
 </html>

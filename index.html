@@ -26,7 +26,7 @@ async function init() {
       BASE_URL + "model.json",
       BASE_URL + "metadata.json"
     );
-    document.getElementById("status").innerText = "Modello pronto 19";
+    document.getElementById("status").innerText = "Modello pronto 20";
    // ThunkableWebviewerExtension.postMessage("PRONTO");
   } catch (e) {
 //    ThunkableWebviewerExtension.postMessage("ERRORE_LOAD:" + e.message);
@@ -70,35 +70,22 @@ function sendToThunkable(message) {
     }
 }
 async function runPrediction(imgElement) {
-    try {
-        // 1. Controllo se il modello esiste
-        if (!model) {
-            ThunkableWebviewerExtension.postMessage("ERRORE: Modello non caricato");
-            return;
+            try {
+                const predictions = await model.predict(imgElement);
+                predictions.sort((a, b) => b.probability - a.probability);
+                
+                const result = {
+                    className: predictions[0].className,
+                    probability: Number(predictions[0].probability.toFixed(4))
+                };
+
+                // Invia il JSON a Thunkable
+                ThunkableWebviewerExtension.postMessage(JSON.stringify(result));
+                document.getElementById("status").innerText = "Analisi inviata: " + result.className;
+            } catch (err) {
+                ThunkableWebviewerExtension.postMessage("ERRORE_PREDICT: " + err.message);
+            }
         }
-
-        // 2. Esegui la predizione
-        const predictions = await model.predict(imgElement);
-        
-        // 3. Ordina i risultati (dal più probabile al meno)
-        predictions.sort((a, b) => b.probability - a.probability);
-        const top = predictions[0];
-
-        // 4. Prepara l'oggetto JSON
-        const resultJSON = JSON.stringify({
-            className: top.className,
-            probability: Number(top.probability.toFixed(4))
-        });
-
-        // 5. Invia un SINGOLO messaggio a Thunkable
-        // Non serve il setTimeout se la libreria è caricata correttamente
-        ThunkableWebviewerExtension.postMessage(resultJSON);
-
-    } catch (err) {
-        // Invia l'errore specifico a Thunkable per il debug
-        ThunkableWebviewerExtension.postMessage("ERRORE_PREDICT: " + err.message);
-    }
-}
 
 
 </script>

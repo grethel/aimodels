@@ -44,7 +44,7 @@ ThunkableWebviewerExtension.receiveMessage(function(message) {
 	 const imageUrl = message.replace(/^"(.*)"$/, '$1');
 	img.src = imageUrl;
 	if(isValidUrl(img.src)) {
-	
+		alert("ciao");
 		const img = document.createElement("img");
 		img.crossOrigin = "anonymous";
 		img.src = imageUrl;

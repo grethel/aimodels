@@ -3,89 +3,75 @@
 <head>
 <meta charset="UTF-8">
 <title>Teachable Machine Thunkable</title>
+
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
-  <script src="https://thunkable.github.io/webviewer-extension/thunkableWebviewerExtension.js" type="text/javascript"></script>
+<script src="https://thunkable.github.io/webviewer-extension/thunkableWebviewerExtension.js"></script>
 </head>
+
 <body>
 <div id="status">Inizializzazione...</div>
-<img id="image-to-predict" style="display:none;" crossorigin="anonymous">
- <span id="messageDisplay"></span>
+<span id="messageDisplay"></span>
+
 <script>
 const BASE_URL = "https://teachablemachine.withgoogle.com/models/Otp8GlSUe/";
-let model;
- 
+let model = null;
 
+/* === INIT MODELLO === */
 async function init() {
-    try {
-        const modelURL = BASE_URL + "model.json";
-        const metadataURL = BASE_URL + "metadata.json";
-        model = await tmImage.load(modelURL, metadataURL);
-        
-    } catch(e) {
-        
-    }
+    const modelURL = BASE_URL + "model.json";
+    const metadataURL = BASE_URL + "metadata.json";
+    model = await tmImage.load(modelURL, metadataURL);
+    document.getElementById("status").innerText = "Modello pronto";
 }
+init();
 
-async function predict(imageUrl) {
-    const img = document.createElement("img");
+/* === COMUNICAZIONE CON THUNKABLE === */
+ThunkableWebviewerExtension.receiveMessageWithReturnValue(
+  async function(message, callback) {
+
+    document.getElementById("messageDisplay").innerText =
+      "Ricevuto URL: " + message;
+
+    // controllo modello
+    if (!model) {
+      callback("ERRORE: modello non pronto");
+      return;
+    }
+
+    // controllo URL
+    if (typeof message !== "string" || !message.startsWith("http")) {
+      callback("ERRORE: input non valido");
+      return;
+    }
+
+    const img = new Image();
     img.crossOrigin = "anonymous";
-    img.src = imageUrl;
+    img.src = message;
 
     img.onload = async () => {
-        try {
-            const predictions = await model.predict(img);
-            predictions.sort((a,b)=>b.probability-a.probability);
-            const top = predictions[0];
-            sendToThunkable(JSON.stringify({
-                className: top.className,
-                probability: Number(top.probability.toFixed(4))
-            }));
-        } catch(err){
-            sendToThunkable("ERRORE_PREDICT:" + err.message);
-        }
-    }
+      try {
+        const predictions = await model.predict(img);
+        predictions.sort((a, b) => b.probability - a.probability);
+
+        const top = predictions[0];
+
+        const response = JSON.stringify({
+          className: top.className,
+          probability: Number(top.probability.toFixed(4))
+        });
+
+        callback(response); // ✅ SOLO QUI
+
+      } catch (err) {
+        callback("ERRORE_PREDICT: " + err.message);
+      }
+    };
 
     img.onerror = () => {
-        sendToThunkable("ERRORE_CARICAMENTO_IMMAGINE");
-    }
-}
-  // Function to handle incoming messages that expect a return value
-    ThunkableWebviewerExtension.receiveMessageWithReturnValue(function(message, callback) {
-      // Create the response by prefixing the received message with "demo: "
-      const response = 'demo: ' + message;
-      
-      // Optionally display the received message on the webpage
-      document.getElementById('messageDisplay').innerText = response;
-      
-      // Send the response back to the Thunkable app
-	  
-		const img = document.createElement("img");
-		img.crossOrigin = "anonymous";
-		img.src = message;
-
-		img.onload = async () => {
-			try {
-				const predictions = await model.predict(img);
-				predictions.sort((a,b)=>b.probability-a.probability);
-				const top = predictions[0];
-				response= JSON.stringify({className: top.className,probability: Number(top.probability.toFixed(4))});
-			} catch(err){
-				response= "ERRORE_PREDICT:" + err.message;
-			}
-		}
-
-		img.onerror = () => {
-			response="ERRORE_CARICAMENTO_IMMAGINE";
-		}
-  
-		callback(response);
-    });
-
- 
- 
-
-init();
+      callback("ERRORE_CARICAMENTO_IMMAGINE");
+    };
+});
 </script>
 </body>
 </html>

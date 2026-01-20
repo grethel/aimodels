@@ -26,7 +26,7 @@ async function init() {
       BASE_URL + "model.json",
       BASE_URL + "metadata.json"
     );
-    document.getElementById("status").innerText = "Modello pronto 16";
+    document.getElementById("status").innerText = "Modello pronto 17";
    // ThunkableWebviewerExtension.postMessage("PRONTO");
   } catch (e) {
 //    ThunkableWebviewerExtension.postMessage("ERRORE_LOAD:" + e.message);
@@ -62,7 +62,13 @@ ThunkableWebviewerExtension.receiveMessage(function(message) {
     try { new URL(str); return true; }
     catch(e){ return false; }
 }
-
+function sendToThunkable(message) {
+    if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+        window.ReactNativeWebView.postMessage(message);
+    } else {
+        console.warn("ReactNativeWebView non disponibile. Messaggio:", message);
+    }
+}
 async function runPrediction(img) {
     try {
         const predictions = await model.predict(img);
@@ -75,7 +81,7 @@ async function runPrediction(img) {
         });
 
         // Callback a Thunkable (funziona)
-        callback(resultJSON);
+        sendToThunkable(resultJSON);
 
         // ✅ Se vuoi postMessage separato, fai così:
         setTimeout(() => {
@@ -83,7 +89,7 @@ async function runPrediction(img) {
         }, 0);
 
     } catch(err) {
-        callback("ERRORE_PREDICT:" + err.message);
+        sendToThunkable("ERRORE_PREDICT:" + err.message);
     }
 }
 

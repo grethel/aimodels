@@ -14,19 +14,16 @@
 <script>
 const BASE_URL = "https://teachablemachine.withgoogle.com/models/Otp8GlSUe/";
 let model;
-
-function sendToThunkable(message) {
-     
-}
+ 
 
 async function init() {
     try {
         const modelURL = BASE_URL + "model.json";
         const metadataURL = BASE_URL + "metadata.json";
         model = await tmImage.load(modelURL, metadataURL);
-        sendToThunkable("PRONTO");
+        
     } catch(e) {
-        sendToThunkable("ERRORE_LOAD:" + e.message);
+        
     }
 }
 
@@ -86,24 +83,7 @@ async function predict(imageUrl) {
     });
 
  
-	
-	
-// Ricezione URL da Thunkable (solo se è un URL valido)
-function isValidUrl(str) {
-    try { new URL(str); return true; }
-    catch(e){ return false; }
-}
-
-window.addEventListener("message", (event)=>{
-    const msg = event.data;
-	document.getElementById("status").innerHTML=msg;
-	  sendToThunkable(msg);
-    if(msg && typeof msg === "string" && isValidUrl(msg)){
-        predict(msg);
-    } else {
-        console.warn("Messaggio ignorato non URL:", msg);
-    }
-});
+ 
 
 init();
 </script>

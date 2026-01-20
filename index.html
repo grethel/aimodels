@@ -43,50 +43,17 @@ init();
 /* ===============================
    RICEZIONE URL + PREDIZIONE
 ================================ */
-ThunkableWebviewerExtension.receiveMessageWithReturnValue(
-    function(message, callback) {
-
-    document.getElementById("messageDisplay").innerText =
-      "Ricevuto: " + message;
-
-    if (!model) {
-      callback("ERRORE: modello non pronto");
-      return;
-    }
-
-    if (typeof message !== "string" || !message.startsWith("http")) {
-      callback("ERRORE: input non valido:"+message);
-      return;
-    }
-
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = message;
-
-    img.onload = async () => {
-      try {
-        const predictions = await model.predict(img);
-        predictions.sort((a, b) => b.probability - a.probability);
-
-        const top = predictions[0];
-
-        const response = JSON.stringify({
-          className: top.className,
-          probability: Number(top.probability.toFixed(4))
-        });
-
-        callback(response);       // ← RISPOSTA A THUNKABLE
-        sendToThunkable(response); // ← opzionale (debug)
-
-      } catch (err) {
-        callback("ERRORE_PREDICT:" + err.message);
-      }
-    };
-
-    img.onerror = () => {
-      callback("ERRORE_CARICAMENTO_IMMAGINE");
-    };
-});
+    ThunkableWebviewerExtension.receiveMessageWithReturnValue(function(message, callback) {
+      // Create the response by prefixing the received message with "demo: "
+      const response = 'demo: ' + message;
+      
+      // Optionally display the received message on the webpage
+      document.getElementById('messageDisplay').innerText = response;
+      predict(message);
+      // Send the response back to the Thunkable app
+	  
+      callback(response);
+    });
 </script>
 </body>
 </html>

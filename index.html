@@ -60,7 +60,7 @@ ThunkableWebviewerExtension.receiveMessage(function(message) {
 			  const top = predictions[0];
 			  
 			  //callback(top);
-			  document.getElementById("messageDisplay").innerText  top;
+			  document.getElementById("messageDisplay").innerText = top;
 
 			} catch(e) {
 			  //callback("ERRORE_PREDICT:" + e.message);

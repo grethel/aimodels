@@ -26,7 +26,7 @@ async function init() {
       BASE_URL + "model.json",
       BASE_URL + "metadata.json"
     );
-    document.getElementById("status").innerText = "Modello pronto 27";
+    document.getElementById("status").innerText = "Modello pronto 28";
    // ThunkableWebviewerExtension.postMessage("PRONTO");
   } catch (e) {
 //    ThunkableWebviewerExtension.postMessage("ERRORE_LOAD:" + e.message);
@@ -56,14 +56,14 @@ ThunkableWebviewerExtension.receiveMessage(function(message) {
 			try {
 				
 			  const predictions = model.predict(img); // predizione sincrona su img già caricata
-			  predictions.sort((a,b)=>b.probability-a.probability);
+			   
 			  const top = predictions[0];
 			  
-			  //callback(top);
+			   callback(top);
 			  document.getElementById("messageDisplay").innerText = top;
 
 			} catch(e) {
-			  //callback("ERRORE_PREDICT:" + e.message);
+			   callback("ERRORE_PREDICT:" + e.message);
 			  document.getElementById("messageDisplay").innerText ="ERRORE_PREDICT:" + e.message;
 			}
 		  }

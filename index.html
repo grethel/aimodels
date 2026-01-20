@@ -16,11 +16,7 @@ const BASE_URL = "https://teachablemachine.withgoogle.com/models/Otp8GlSUe/";
 let model;
 
 function sendToThunkable(message) {
-    if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
-        window.ReactNativeWebView.postMessage(message);
-    } else {
-        console.warn("ReactNativeWebView non disponibile. Messaggio:", message);
-    }
+     
 }
 
 async function init() {
@@ -64,7 +60,7 @@ async function predict(imageUrl) {
       
       // Optionally display the received message on the webpage
       document.getElementById('messageDisplay').innerText = response;
-      
+      predict(message);
       // Send the response back to the Thunkable app
       callback(response);
     });
@@ -74,7 +70,10 @@ async function predict(imageUrl) {
       // Display the received message with "demo: " prefix
       const response = 'demo: ' + message;
       document.getElementById('messageDisplay').innerText = response;
+	   predict(message);
     });
+	
+	
 // Ricezione URL da Thunkable (solo se è un URL valido)
 function isValidUrl(str) {
     try { new URL(str); return true; }

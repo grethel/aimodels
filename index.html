@@ -44,7 +44,7 @@ init();
    RICEZIONE URL + PREDIZIONE
 ================================ */
 ThunkableWebviewerExtension.receiveMessageWithReturnValue(
-  async function(message, callback) {
+    function(message, callback) {
 
     document.getElementById("messageDisplay").innerText =
       "Ricevuto: " + message;
